@@ -1,4 +1,4 @@
-﻿const WHATSAPP_NUMBER = "5491160049643";
+﻿const WHATSAPP_NUMBER = "5491159339958";
 const SHEET_ID = "15-MwPmN2j1vtM1xB-RFcRd_2UI74A2kHcfx-hPuAMdw";
 const SHEET_GID = "0";
 
@@ -12,6 +12,7 @@ let scrollButtonTimer = null;
 const SCROLL_BUTTON_IDLE_MS = 1400;
 const SUBCATEGORY_NONE_KEY = "__sin_subcategoria__";
 const textCollator = new Intl.Collator("es", { sensitivity: "base", numeric: true });
+const MATERIAL_SORT_ORDER = ["melamina", "pino", "fibrofacil"];
 
 const html = {
   root: document.documentElement,
@@ -96,6 +97,17 @@ function formatMoney(value) {
 
 function compareText(a, b) {
   return textCollator.compare(String(a || ""), String(b || ""));
+}
+
+function materialSortIndex(materialName) {
+  const normalized = slugify(materialName);
+  const index = MATERIAL_SORT_ORDER.findIndex((token) => normalized.includes(token));
+  return index === -1 ? MATERIAL_SORT_ORDER.length : index;
+}
+
+function compareMaterials(a, b) {
+  const byOrder = materialSortIndex(a.name) - materialSortIndex(b.name);
+  return byOrder !== 0 ? byOrder : compareText(a.name, b.name);
 }
 
 function setGroupsMessage(message) {
@@ -679,7 +691,7 @@ async function loadCatalogFromSheet() {
   });
 
   return Array.from(materials.values())
-    .sort((a, b) => compareText(a.name, b.name))
+    .sort(compareMaterials)
     .map((material) => ({
       id: material.id,
       name: material.name,
@@ -702,7 +714,8 @@ async function init() {
       return;
     }
 
-    activeCategory = catalog[0].id;
+    const melaminaCategory = catalog.find((cat) => slugify(cat.name).includes("melamina"));
+    activeCategory = (melaminaCategory || catalog[0]).id;
     render();
   } catch (error) {
     console.error(error);
@@ -713,4 +726,3 @@ async function init() {
 }
 
 init();
-
